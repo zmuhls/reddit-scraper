@@ -498,15 +498,36 @@ def main():
             """)
             
         with cred_col2:
-            # Try to load from .env file
-            load_dotenv()
-            default_client_id = os.environ.get("REDDIT_CLIENT_ID", "")
-            default_client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
-            default_user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+            # Initialize session state for credentials if they don't exist
+            if 'client_id' not in st.session_state:
+                st.session_state.client_id = ""
+            if 'client_secret' not in st.session_state:
+                st.session_state.client_secret = ""
+            if 'user_agent' not in st.session_state:
+                st.session_state.user_agent = "RedditScraperApp/1.0"
             
-            client_id = st.text_input("Client ID", value=default_client_id)
-            client_secret = st.text_input("Client Secret", value=default_client_secret, type="password")
-            user_agent = st.text_input("User Agent", value=default_user_agent)
+            # In development environment, try to load from .env file for convenience
+            # But don't do this in production to avoid credential leakage
+            is_local_dev = not os.environ.get('SPACE_ID') and not os.environ.get('SYSTEM')
+            if is_local_dev:
+                load_dotenv()
+                # Only load from env if session state is empty (first load)
+                if not st.session_state.client_id:
+                    st.session_state.client_id = os.environ.get("REDDIT_CLIENT_ID", "")
+                if not st.session_state.client_secret:
+                    st.session_state.client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+                if st.session_state.user_agent == "RedditScraperApp/1.0":
+                    st.session_state.user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+            
+            # Use session state for the input values
+            client_id = st.text_input("Client ID", value=st.session_state.client_id, key="client_id_input")
+            client_secret = st.text_input("Client Secret", value=st.session_state.client_secret, type="password", key="client_secret_input")
+            user_agent = st.text_input("User Agent", value=st.session_state.user_agent, key="user_agent_input")
+            
+            # Update session state when input changes
+            st.session_state.client_id = client_id
+            st.session_state.client_secret = client_secret
+            st.session_state.user_agent = user_agent
             
             save_as_env = st.checkbox("Save credentials for future use (.env file)", value=False)
             
