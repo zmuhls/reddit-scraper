@@ -1,11 +1,8 @@
-# Reddit Scraper Hugging Face Space Launcher
-# This file serves as the entry point for our Hugging Face Space
-
-import os
 import streamlit as st
+import os
 from dotenv import load_dotenv
 
-# Configure Streamlit page
+# IMPORTANT: set_page_config must be the first Streamlit command called
 st.set_page_config(
     page_title="Reddit Scraper",
     page_icon="📊",
@@ -13,32 +10,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Load environment variables from .streamlit/secrets.toml if in Hugging Face Space Environment
-def load_huggingface_secrets():
-    try:
-        # HF Spaces store secrets in st.secrets
-        client_id = st.secrets.get("REDDIT_CLIENT_ID", "")
-        client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", "")
-        user_agent = st.secrets.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
-        
-        # Set as environment variables for other modules to use
-        if client_id:
-            os.environ["REDDIT_CLIENT_ID"] = client_id
-        if client_secret:
-            os.environ["REDDIT_CLIENT_SECRET"] = client_secret
-        if user_agent:
-            os.environ["REDDIT_USER_AGENT"] = user_agent
-            
-        return True
-    except Exception:
-        # Fallback to regular .env file if not in HF Space
-        return False
-
-# Try to load secrets (first from HF secrets, then from .env)
-load_huggingface_secrets()
+# Load environment variables
 load_dotenv()
 
-# Add custom CSS
+# Custom CSS
 st.markdown("""
 <style>
     .main-header {
@@ -66,24 +41,32 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Now import functions from the UI module
-# But not the whole file to avoid st.set_page_config being called twice
-import sys
-import importlib.util
+# Load Hugging Face secrets if available
+try:
+    client_id = st.secrets.get("REDDIT_CLIENT_ID", "")
+    client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", "")
+    user_agent = st.secrets.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+    
+    # Set as environment variables for other modules to use
+    if client_id:
+        os.environ["REDDIT_CLIENT_ID"] = client_id
+    if client_secret:
+        os.environ["REDDIT_CLIENT_SECRET"] = client_secret
+    if user_agent:
+        os.environ["REDDIT_USER_AGENT"] = user_agent
+except Exception as e:
+    # No secrets configured, will fall back to user input
+    pass
 
-# Import individual functions from advanced_scraper_ui
-spec = importlib.util.spec_from_file_location("advanced_scraper_ui", "advanced_scraper_ui.py")
-ui_module = importlib.util.module_from_spec(spec)
-sys.modules["advanced_scraper_ui"] = ui_module
-spec.loader.exec_module(ui_module)
+# Now that page config is set, we can safely import the main function
+from advanced_scraper_ui import main
 
-# Run the main app
+# Run the app
 if __name__ == "__main__":
     try:
-        # Call the main function without re-importing the whole module
-        ui_module.main()
+        main()
     except Exception as e:
-        st.error(f"Error running the application: {str(e)}")
+        st.error(f"Error: {str(e)}")
         st.error("This might be due to missing Reddit API credentials.")
         
         # Display instructions for setting up credentials

@@ -9,7 +9,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
 
-# Note: Page configuration moved to app.py for Hugging Face Space compatibility
+# Note: Page configuration is handled in app.py
 
 # Session state initialization
 if 'results' not in st.session_state:
