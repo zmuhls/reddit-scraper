@@ -44,21 +44,25 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load Hugging Face secrets if available
-try:
-    client_id = st.secrets.get("REDDIT_CLIENT_ID", "")
-    client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", "")
-    user_agent = st.secrets.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
-    
-    # Set as environment variables for other modules to use
-    if client_id:
-        os.environ["REDDIT_CLIENT_ID"] = client_id
-    if client_secret:
-        os.environ["REDDIT_CLIENT_SECRET"] = client_secret
-    if user_agent:
-        os.environ["REDDIT_USER_AGENT"] = user_agent
-except Exception as e:
-    # No secrets configured, will fall back to user input
-    pass
+# Use a more silent approach to hide the "No secrets files found" message
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    try:
+        client_id = st.secrets.get("REDDIT_CLIENT_ID", "")
+        client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", "")
+        user_agent = st.secrets.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+        
+        # Set as environment variables for other modules to use
+        if client_id:
+            os.environ["REDDIT_CLIENT_ID"] = client_id
+        if client_secret:
+            os.environ["REDDIT_CLIENT_SECRET"] = client_secret
+        if user_agent:
+            os.environ["REDDIT_USER_AGENT"] = user_agent
+    except Exception as e:
+        # No secrets configured, will fall back to user input
+        pass
 
 # Now that setup is complete, import the main function
 from enhanced_scraper import EnhancedRedditScraper
