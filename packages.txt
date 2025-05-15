@@ -1,3 +1,1 @@
-# This is an empty packages.txt file
-# Hugging Face uses this file to install system dependencies
-# Our app doesn't require any additional system packages
+
