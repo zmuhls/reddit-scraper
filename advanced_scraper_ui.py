@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
+import warnings
 
 # Note: Page configuration and session state initialization are handled in app.py
 
@@ -151,59 +152,32 @@ def create_data_visualization(results):
             st.plotly_chart(fig, use_container_width=True)
 
 def main():
+    # Suppress the "No secrets files found" warning
+    warnings.filterwarnings("ignore", message="No secrets files found.*")
+    
+    # Ensure session state variables are initialized
+    if 'results' not in st.session_state:
+        st.session_state['results'] = None
+    if 'scraper' not in st.session_state:
+        st.session_state['scraper'] = None
+    if 'search_history' not in st.session_state:
+        st.session_state['search_history'] = []
+    if 'filters' not in st.session_state:
+        st.session_state['filters'] = {
+            'min_score': 0,
+            'date_from': None,
+            'date_to': None,
+            'show_only_with_comments': False
+        }
+    
     # Header
-    st.markdown('<div class="main-header">Advanced Reddit Scraper</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subheader">Web Scraping Development Environment</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Reddit Scraper</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subheader">Data Collection Tool</div>', unsafe_allow_html=True)
     
     # Sidebar for configuration
     with st.sidebar:
         st.header("Configuration")
         
-        # Credentials
-        with st.expander("Reddit API Credentials", expanded=not st.session_state.scraper):
-            st.markdown("""
-            ### Reddit API Credentials
-            Please enter your Reddit API credentials below. You can obtain these from the 
-            [Reddit Developer Portal](https://www.reddit.com/prefs/apps).
-            
-            If you don't have your own credentials, you can leave these fields empty and the app 
-            will try to use credentials from environment variables if available.
-            """)
-            
-            # Try to load from .env file
-            load_dotenv()
-            default_client_id = os.environ.get("REDDIT_CLIENT_ID", "")
-            default_client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
-            default_user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
-            
-            client_id = st.text_input("Client ID", value=default_client_id)
-            client_secret = st.text_input("Client Secret", value=default_client_secret, type="password")
-            user_agent = st.text_input("User Agent", value=default_user_agent)
-            
-            save_as_env = st.checkbox("Save credentials for future use (saved in .env file)", value=False)
-            
-            if st.button("Initialize API Connection"):
-                # Save credentials if requested
-                if save_as_env and (client_id or client_secret):
-                    env_vars = []
-                    if client_id:
-                        env_vars.append(f"REDDIT_CLIENT_ID={client_id}")
-                    if client_secret:
-                        env_vars.append(f"REDDIT_CLIENT_SECRET={client_secret}")
-                    if user_agent and user_agent != "RedditScraperApp/1.0":
-                        env_vars.append(f"REDDIT_USER_AGENT={user_agent}")
-                    
-                    # Write to .env file
-                    with open(".env", "w") as f:
-                        f.write("\n".join(env_vars))
-                    st.success("Credentials saved to .env file")
-                
-                if initialize_scraper(client_id, client_secret, user_agent):
-                    st.success("API connection established!")
-                    # Set environment variables for the current session
-                    os.environ["REDDIT_CLIENT_ID"] = client_id
-                    os.environ["REDDIT_CLIENT_SECRET"] = client_secret
-                    os.environ["REDDIT_USER_AGENT"] = user_agent
         
         # Search Parameters
         st.subheader("Search Parameters")
@@ -231,7 +205,7 @@ def main():
             clear_button = st.button("Clear Results", type="secondary", use_container_width=True)
     
     # Main interface tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Results", "Visualizations", "Export", "History"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Results", "Visualizations", "Export", "History", "API Credentials"])
     
     # Handle Actions
     if clear_button:
@@ -350,21 +324,21 @@ def main():
             # Show help for first-time users
             with st.expander("Help & Tips"):
                 st.markdown("""
-                ### Getting Started with Reddit Scraper
+                ### Quick Start Guide
                 
-                1. **Set up your Reddit API credentials** in the sidebar (you'll need to create these on the Reddit Developer Portal)
-                2. **Enter subreddits** you want to search (one per line)
-                3. **Enter keywords** to filter posts (one per line)
-                4. Adjust other settings as needed
-                5. Click **Run Search** to start
+                1. Set up your **API credentials** in the API Credentials tab
+                2. Enter **subreddits** to search (one per line)
+                3. Enter **keywords** to filter posts (one per line)
+                4. Adjust settings as needed
+                5. Click **Run Search**
                 
-                ### Tips for Effective Searches
+                ### Search Tips
                 
-                - Use specific keywords to narrow down results
-                - Try searching multiple related subreddits for better coverage
-                - Include comments in search to find discussions where your keywords appear in replies
-                - Use the visualization tab to analyze trends in the results
-                - Export your results for further analysis in other tools
+                - Use specific keywords for targeted results
+                - Search multiple related subreddits for better coverage
+                - Enable comment search to find keywords in discussions
+                - Use visualizations to identify trends
+                - Export data for external analysis
                 """)
     
     # Tab 2: Visualizations
@@ -462,6 +436,99 @@ def main():
                     st.markdown(f"**Time:** {search['timestamp']}")
         else:
             st.info("No search history yet.")
+            
+    # Tab 5: API Credentials - Auto-closed by default
+    with tab5:
+        # Display welcome message and credential information if credentials are not set
+        if not os.environ.get("REDDIT_CLIENT_ID") and not os.environ.get("REDDIT_CLIENT_SECRET"):
+            st.info("👋 Welcome to Reddit Scraper!")
+            
+            with st.expander("Important: Reddit API Credentials Required", expanded=False):
+                st.markdown("""
+                ## Important: Reddit API Credentials Required
+                
+                This app requires you to provide your own Reddit API credentials to function. 
+                You'll need to:
+                
+                1. Obtain your credentials from the [Reddit Developer Portal](https://www.reddit.com/prefs/apps)
+                2. Enter them in the sidebar's "Reddit API Credentials" section
+                
+                ### Getting Reddit API Credentials:
+                1. Go to https://www.reddit.com/prefs/apps
+                2. Click "Create App" or "Create Another App" 
+                3. Fill in the details (name, description)
+                4. Select "script" as the application type
+                5. Use "http://localhost:8000" as the redirect URI
+                6. Click "Create app"
+                7. Take note of the client ID and client secret
+                
+                ### Privacy Note
+                Your credentials are never stored on any servers. If you're using a personal copy of this Space, 
+                you can set them up as Space secrets for convenience.
+                """)
+        
+        st.subheader("Reddit API Credentials")
+        
+        st.markdown("""
+        ### Reddit API Credentials Required
+        
+        This app requires your Reddit API credentials to function. 
+        """)
+        
+        # Two columns for instructions and input
+        cred_col1, cred_col2 = st.columns([1, 1])
+        
+        with cred_col1:
+            st.markdown("""
+            #### Getting Credentials:
+            1. Go to [Reddit Developer Portal](https://www.reddit.com/prefs/apps)
+            2. Click "Create App" or "Create Another App"
+            3. Fill in details (name, description)
+            4. Select "script" as application type
+            5. Use "http://localhost:8000" as redirect URI
+            6. Click "Create app"
+            7. Note the client ID and secret
+            
+            #### Privacy Note
+            Your credentials are never stored on any servers. For personal copies, 
+            you can set them as Space secrets.
+            """)
+            
+        with cred_col2:
+            # Try to load from .env file
+            load_dotenv()
+            default_client_id = os.environ.get("REDDIT_CLIENT_ID", "")
+            default_client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+            default_user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+            
+            client_id = st.text_input("Client ID", value=default_client_id)
+            client_secret = st.text_input("Client Secret", value=default_client_secret, type="password")
+            user_agent = st.text_input("User Agent", value=default_user_agent)
+            
+            save_as_env = st.checkbox("Save credentials for future use (.env file)", value=False)
+            
+            if st.button("Initialize API Connection", type="primary"):
+                # Save credentials if requested
+                if save_as_env and (client_id or client_secret):
+                    env_vars = []
+                    if client_id:
+                        env_vars.append(f"REDDIT_CLIENT_ID={client_id}")
+                    if client_secret:
+                        env_vars.append(f"REDDIT_CLIENT_SECRET={client_secret}")
+                    if user_agent and user_agent != "RedditScraperApp/1.0":
+                        env_vars.append(f"REDDIT_USER_AGENT={user_agent}")
+                    
+                    # Write to .env file
+                    with open(".env", "w") as f:
+                        f.write("\n".join(env_vars))
+                    st.success("Credentials saved to .env file")
+                
+                if initialize_scraper(client_id, client_secret, user_agent):
+                    st.success("API connection established!")
+                    # Set environment variables for the current session
+                    os.environ["REDDIT_CLIENT_ID"] = client_id
+                    os.environ["REDDIT_CLIENT_SECRET"] = client_secret
+                    os.environ["REDDIT_USER_AGENT"] = user_agent
 
 if __name__ == "__main__":
     main()
