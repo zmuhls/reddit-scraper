@@ -6,6 +6,7 @@ import time
 import os
 import json
 from datetime import datetime
+from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
 
 # Page configuration
@@ -209,13 +210,49 @@ def main():
         
         # Credentials
         with st.expander("Reddit API Credentials", expanded=not st.session_state.scraper):
-            client_id = st.text_input("Client ID", value="aBHOo9oQ3D-liyfGOc34cQ")
-            client_secret = st.text_input("Client Secret", value="4__ziHwdOBNYjlGUG0k7XvK-r5OJDw", type="password")
-            user_agent = st.text_input("User Agent", value="WebScraperUI/1.0")
+            st.markdown("""
+            ### Reddit API Credentials
+            Please enter your Reddit API credentials below. You can obtain these from the 
+            [Reddit Developer Portal](https://www.reddit.com/prefs/apps).
+            
+            If you don't have your own credentials, you can leave these fields empty and the app 
+            will try to use credentials from environment variables if available.
+            """)
+            
+            # Try to load from .env file
+            load_dotenv()
+            default_client_id = os.environ.get("REDDIT_CLIENT_ID", "")
+            default_client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+            default_user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+            
+            client_id = st.text_input("Client ID", value=default_client_id)
+            client_secret = st.text_input("Client Secret", value=default_client_secret, type="password")
+            user_agent = st.text_input("User Agent", value=default_user_agent)
+            
+            save_as_env = st.checkbox("Save credentials for future use (saved in .env file)", value=False)
             
             if st.button("Initialize API Connection"):
+                # Save credentials if requested
+                if save_as_env and (client_id or client_secret):
+                    env_vars = []
+                    if client_id:
+                        env_vars.append(f"REDDIT_CLIENT_ID={client_id}")
+                    if client_secret:
+                        env_vars.append(f"REDDIT_CLIENT_SECRET={client_secret}")
+                    if user_agent and user_agent != "RedditScraperApp/1.0":
+                        env_vars.append(f"REDDIT_USER_AGENT={user_agent}")
+                    
+                    # Write to .env file
+                    with open(".env", "w") as f:
+                        f.write("\n".join(env_vars))
+                    st.success("Credentials saved to .env file")
+                
                 if initialize_scraper(client_id, client_secret, user_agent):
                     st.success("API connection established!")
+                    # Set environment variables for the current session
+                    os.environ["REDDIT_CLIENT_ID"] = client_id
+                    os.environ["REDDIT_CLIENT_SECRET"] = client_secret
+                    os.environ["REDDIT_USER_AGENT"] = user_agent
         
         # Search Parameters
         st.subheader("Search Parameters")

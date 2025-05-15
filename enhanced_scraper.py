@@ -4,7 +4,9 @@ import datetime
 import re
 import json
 import os
+import os.path
 from typing import List, Dict, Any, Optional
+from dotenv import load_dotenv
 
 class EnhancedRedditScraper:
     """
@@ -194,26 +196,44 @@ class EnhancedRedditScraper:
 
 # Example usage
 if __name__ == "__main__":
+    # Load environment variables from .env file
+    load_dotenv()
+    
+    # Get credentials from environment variables or use defaults for development
+    client_id = os.environ.get("REDDIT_CLIENT_ID", "")
+    client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+    user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
+    
+    if not client_id or not client_secret:
+        print("Warning: Reddit API credentials not found in environment variables.")
+        print("Please set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET in .env file")
+        print("or as environment variables for proper functionality.")
+        # For development only, you could set default credentials here
+    
     # Create the scraper instance
     scraper = EnhancedRedditScraper(
-        client_id="aBHOo9oQ3D-liyfGOc34cQ",
-        client_secret="4__ziHwdOBNYjlGUG0k7XvK-r5OJDw",
-        user_agent="rcuny"
+        client_id=client_id,
+        client_secret=client_secret,
+        user_agent=user_agent
     )
     
     # Simple example
-    results = scraper.scrape_subreddit(
-        subreddit_name="cuny",
-        keywords=["question", "help", "confused"],
-        limit=25,
-        sort_by="hot",
-        include_comments=True
-    )
-    
-    print(f"Found {len(results)} matching posts")
-    
-    # Save results to file
-    if results:
-        csv_path = scraper.save_results_to_csv("reddit_results")
-        json_path = scraper.save_results_to_json("reddit_results")
-        print(f"Results saved to {csv_path} and {json_path}")
+    try:
+        results = scraper.scrape_subreddit(
+            subreddit_name="cuny",
+            keywords=["question", "help", "confused"],
+            limit=25,
+            sort_by="hot",
+            include_comments=True
+        )
+        
+        print(f"Found {len(results)} matching posts")
+        
+        # Save results to file
+        if results:
+            csv_path = scraper.save_results_to_csv("reddit_results")
+            json_path = scraper.save_results_to_json("reddit_results")
+            print(f"Results saved to {csv_path} and {json_path}")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        print("This may be due to missing or invalid API credentials.")
