@@ -1,3 +1,7 @@
+# Add warning suppression at the very beginning before any other imports
+import warnings
+warnings.filterwarnings("ignore", message="No secrets files found.*")
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,7 +12,6 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
-import warnings
 
 # Note: Page configuration and session state initialization are handled in app.py
 

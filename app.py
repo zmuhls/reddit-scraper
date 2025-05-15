@@ -1,3 +1,7 @@
+# Add warning suppression at the very beginning before any other imports
+import warnings
+warnings.filterwarnings("ignore", message="No secrets files found.*")
+
 import streamlit as st
 import os
 from dotenv import load_dotenv
