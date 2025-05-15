@@ -63,25 +63,32 @@ from advanced_scraper_ui import main
 
 # Run the app
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-        st.error("This might be due to missing Reddit API credentials.")
+    # Display welcome message and credential information
+    if not os.environ.get("REDDIT_CLIENT_ID") and not os.environ.get("REDDIT_CLIENT_SECRET"):
+        st.info("👋 Welcome to Reddit Scraper!")
         
-        # Display instructions for setting up credentials
         st.markdown("""
-        ## Setting up Reddit API Credentials
+        ## Important: Reddit API Credentials Required
         
-        This app requires Reddit API credentials to function properly. You can:
+        This app requires you to provide your own Reddit API credentials to function. 
+        You'll need to:
         
-        1. Enter your credentials directly in the sidebar when the app loads, or
-        2. Set them up as Hugging Face Space secrets (if you've duplicated this Space)
+        1. Obtain your credentials from the [Reddit Developer Portal](https://www.reddit.com/prefs/apps)
+        2. Enter them in the sidebar's "Reddit API Credentials" section
         
-        To obtain Reddit API credentials:
+        ### Getting Reddit API Credentials:
         1. Go to https://www.reddit.com/prefs/apps
         2. Click "Create App" or "Create Another App" 
-        3. Fill in the details and select "script" as the application type
-        4. Use "http://localhost:8000" as the redirect URI
-        5. Take note of the client ID and client secret
+        3. Fill in the details (name, description)
+        4. Select "script" as the application type
+        5. Use "http://localhost:8000" as the redirect URI
+        6. Click "Create app"
+        7. Take note of the client ID and client secret
+        
+        ### Privacy Note
+        Your credentials are never stored on our servers. If you're using a personal copy of this Space, 
+        you can set them up as Space secrets for convenience.
         """)
+    
+    # Run the main application
+    main()

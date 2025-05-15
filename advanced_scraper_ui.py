@@ -367,7 +367,7 @@ def main():
                 st.markdown("""
                 ### Getting Started with Reddit Scraper
                 
-                1. **Set up API credentials** in the sidebar (already pre-filled with sample credentials)
+                1. **Set up your Reddit API credentials** in the sidebar (you'll need to create these on the Reddit Developer Portal)
                 2. **Enter subreddits** you want to search (one per line)
                 3. **Enter keywords** to filter posts (one per line)
                 4. Adjust other settings as needed
