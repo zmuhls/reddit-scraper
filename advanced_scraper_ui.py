@@ -109,47 +109,93 @@ def filter_results(results, filters):
 
 def create_data_visualization(results):
     """Create data visualizations based on results"""
-    # Combine all results
-    all_posts = []
-    for subreddit, posts in results.items():
-        for post in posts:
-            post['subreddit'] = subreddit
-            all_posts.append(post)
-    
-    if not all_posts:
-        st.warning("No data to visualize.")
-        return
-    
-    df = pd.DataFrame(all_posts)
-    
-    # Create tabs for different visualizations
-    viz_tab1, viz_tab2, viz_tab3 = st.tabs(["Score Distribution", "Posts by Subreddit", "Time Analysis"])
-    
-    with viz_tab1:
-        st.subheader("Score Distribution")
-        fig = px.histogram(df, x="score", color="subreddit", nbins=20,
-                          title="Distribution of Post Scores")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with viz_tab2:
-        st.subheader("Posts by Subreddit")
-        subreddit_counts = df['subreddit'].value_counts().reset_index()
-        subreddit_counts.columns = ['subreddit', 'count']
-        fig = px.bar(subreddit_counts, x='subreddit', y='count',
-                     title="Number of Matching Posts by Subreddit")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with viz_tab3:
-        st.subheader("Time Analysis")
-        # Convert created_utc to datetime if it's not already
-        if 'created_utc' in df.columns:
-            df['created_date'] = pd.to_datetime(df['created_utc'])
-            df['hour_of_day'] = df['created_date'].dt.hour
+    try:
+        # Combine all results
+        all_posts = []
+        for subreddit, posts in results.items():
+            for post in posts:
+                try:
+                    post_copy = post.copy()
+                    post_copy['subreddit'] = subreddit
+                    all_posts.append(post_copy)
+                except Exception as e:
+                    st.warning(f"Skipping post due to error: {str(e)}")
+        
+        if not all_posts:
+            st.warning("No data to visualize.")
+            return
+        
+        # Create DataFrame with error handling
+        try:
+            df = pd.DataFrame(all_posts)
+        except Exception as e:
+            st.error(f"Could not create DataFrame: {str(e)}")
+            return
+        
+        # Basic data validation
+        if 'score' not in df.columns or 'subreddit' not in df.columns:
+            missing_columns = []
+            if 'score' not in df.columns:
+                missing_columns.append('score')
+            if 'subreddit' not in df.columns:
+                missing_columns.append('subreddit')
+            st.error(f"Required column(s) missing: {', '.join(missing_columns)}")
+            return
             
-            fig = px.histogram(df, x="hour_of_day", nbins=24,
-                              title="Posts by Hour of Day")
-            fig.update_layout(xaxis_title="Hour of Day (UTC)")
-            st.plotly_chart(fig, use_container_width=True)
+        # Create tabs for different visualizations
+        viz_tab1, viz_tab2, viz_tab3 = st.tabs(["Score Distribution", "Posts by Subreddit", "Time Analysis"])
+        
+        # Score Distribution
+        with viz_tab1:
+            try:
+                st.subheader("Score Distribution")
+                fig = px.histogram(df, x="score", color="subreddit", nbins=20,
+                                  title="Distribution of Post Scores")
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error creating Score Distribution: {str(e)}")
+        
+        # Posts by Subreddit
+        with viz_tab2:
+            try:
+                st.subheader("Posts by Subreddit")
+                subreddit_counts = df['subreddit'].value_counts().reset_index()
+                subreddit_counts.columns = ['subreddit', 'count']
+                fig = px.bar(subreddit_counts, x='subreddit', y='count',
+                             title="Number of Matching Posts by Subreddit")
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error creating Posts by Subreddit chart: {str(e)}")
+        
+        # Time Analysis
+        with viz_tab3:
+            try:
+                st.subheader("Time Analysis")
+                if 'created_utc' in df.columns:
+                    try:
+                        # Handle different date formats
+                        df['created_date'] = pd.to_datetime(df['created_utc'], errors='coerce')
+                        
+                        # Check if conversion was successful
+                        if df['created_date'].isna().all():
+                            st.warning("Could not parse date formats properly.")
+                            return
+                            
+                        df['hour_of_day'] = df['created_date'].dt.hour
+                        
+                        fig = px.histogram(df, x="hour_of_day", nbins=24,
+                                          title="Posts by Hour of Day")
+                        fig.update_layout(xaxis_title="Hour of Day (UTC)")
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error processing dates: {str(e)}")
+                else:
+                    st.warning("No date information available for Time Analysis.")
+            except Exception as e:
+                st.error(f"Error creating Time Analysis: {str(e)}")
+                
+    except Exception as e:
+        st.error(f"Data visualization failed: {str(e)}")
 
 def main():
     # Suppress the "No secrets files found" warning
