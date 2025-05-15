@@ -448,7 +448,6 @@ def main():
             
             with st.expander("Important: Reddit API Credentials Required", expanded=False):
                 st.markdown("""
-                ## Important: Reddit API Credentials Required
                 
                 This app requires you to provide your own Reddit API credentials to function. 
                 You'll need to:
@@ -529,24 +528,7 @@ def main():
             st.session_state.client_secret = client_secret
             st.session_state.user_agent = user_agent
             
-            save_as_env = st.checkbox("Save credentials for future use (.env file)", value=False)
-            
             if st.button("Initialize API Connection", type="primary"):
-                # Save credentials if requested
-                if save_as_env and (client_id or client_secret):
-                    env_vars = []
-                    if client_id:
-                        env_vars.append(f"REDDIT_CLIENT_ID={client_id}")
-                    if client_secret:
-                        env_vars.append(f"REDDIT_CLIENT_SECRET={client_secret}")
-                    if user_agent and user_agent != "RedditScraperApp/1.0":
-                        env_vars.append(f"REDDIT_USER_AGENT={user_agent}")
-                    
-                    # Write to .env file
-                    with open(".env", "w") as f:
-                        f.write("\n".join(env_vars))
-                    st.success("Credentials saved to .env file")
-                
                 if initialize_scraper(client_id, client_secret, user_agent):
                     st.success("API connection established!")
                     # Set environment variables for the current session
