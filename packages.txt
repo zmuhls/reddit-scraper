@@ -1,4 +1,3 @@
-# System dependencies for the Reddit Scraper app
-# This file is used by Hugging Face Spaces to install system packages
-
-# No additional system packages are required for this app
+# This is an empty packages.txt file
+# Hugging Face uses this file to install system dependencies
+# Our app doesn't require any additional system packages
