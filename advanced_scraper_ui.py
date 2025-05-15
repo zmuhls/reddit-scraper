@@ -9,41 +9,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
 
-# Page configuration
-st.set_page_config(
-    page_title="Advanced Reddit Scraper",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Add custom CSS
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-    }
-    .subheader {
-        font-size: 1.5rem;
-        color: #ff4500;
-        margin-bottom: 1rem;
-    }
-    .card {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid #ddd;
-    }
-    .small-text {
-        font-size: 0.8rem;
-        color: #777;
-    }
-    .stButton button {
-        width: 100%;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Note: Page configuration moved to app.py for Hugging Face Space compatibility
 
 # Session state initialization
 if 'results' not in st.session_state:
