@@ -9,22 +9,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
 
-# Note: Page configuration is handled in app.py
-
-# Session state initialization
-if 'results' not in st.session_state:
-    st.session_state.results = None
-if 'scraper' not in st.session_state:
-    st.session_state.scraper = None
-if 'search_history' not in st.session_state:
-    st.session_state.search_history = []
-if 'filters' not in st.session_state:
-    st.session_state.filters = {
-        'min_score': 0,
-        'date_from': None,
-        'date_to': None,
-        'show_only_with_comments': False
-    }
+# Note: Page configuration and session state initialization are handled in app.py
 
 # Functions
 def initialize_scraper(client_id, client_secret, user_agent):

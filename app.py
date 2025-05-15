@@ -58,7 +58,22 @@ except Exception as e:
     # No secrets configured, will fall back to user input
     pass
 
-# Now that page config is set, we can safely import the main function
+# Initialize session state before importing main
+if 'results' not in st.session_state:
+    st.session_state.results = None
+if 'scraper' not in st.session_state:
+    st.session_state.scraper = None
+if 'search_history' not in st.session_state:
+    st.session_state.search_history = []
+if 'filters' not in st.session_state:
+    st.session_state.filters = {
+        'min_score': 0,
+        'date_from': None,
+        'date_to': None,
+        'show_only_with_comments': False
+    }
+
+# Now that page config is set and session state initialized, import the main function
 from advanced_scraper_ui import main
 
 # Run the app
