@@ -442,16 +442,9 @@ def main():
             
     # Tab 5: API Credentials - Auto-closed by default
     with tab5:
-        # Display welcome message and credential information if credentials are not set
+        # Display welcome message if credentials are not set
         if not os.environ.get("REDDIT_CLIENT_ID") and not os.environ.get("REDDIT_CLIENT_SECRET"):
             st.info("👋 Welcome to Reddit Scraper!")
-            
-            st.subheader("Reddit API Credentials")
-            
-            st.markdown("""
-            ### Reddit API Credentials Required
-            
-            This app requires your Reddit API credentials to function.""")
         
         # Two columns for instructions and input
         cred_col1, cred_col2 = st.columns([1, 1])
