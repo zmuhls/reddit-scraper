@@ -1,6 +1,6 @@
-# Reddit Web Scraper UI
+# Reddit Scraper
 
-A user interface for running Reddit web scraping operations in a local development environment.
+A comprehensive tool for scraping Reddit data with both command-line and graphical user interfaces for data collection, analysis, and visualization in a local development environment.
 
 ## Features
 
@@ -66,7 +66,7 @@ This project includes:
 
 ## License
 
-This project is for educational purposes only.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Note
 
