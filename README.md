@@ -1,73 +1,75 @@
+---
+title: Reddit Scraper
+emoji: 🔍
+colorFrom: red
+colorTo: orange
+sdk: streamlit
+sdk_version: 1.32.0
+app_file: app.py
+pinned: false
+license: gpl-3.0
+---
+
 # Reddit Scraper
 
-A comprehensive tool for scraping Reddit data with both command-line and graphical user interfaces for data collection, analysis, and visualization in a local development environment.
+A tool for scraping Reddit data with a user-friendly interface for data collection, analysis, and visualization.
 
 ## Features
 
-- Simple and advanced UI options
-- Search multiple subreddits simultaneously
-- Filter posts by keywords and various criteria
-- Visualize data with interactive charts
-- Export results to CSV or JSON
-- Track search history
+- 🔍 **Search multiple subreddits** simultaneously
+- 🔑 **Filter posts by keywords** and various criteria  
+- 📊 **Visualize data** with interactive charts
+- 💾 **Export results** to CSV or JSON
+- 📜 **Track search history**
+- 🔐 **Secure credentials** management
 
-## Installation
+## How to Use
 
-1. Clone this repository
-2. Make sure you have Python 3.7+ installed
-3. Install dependencies:
+### 1. Set up Reddit API Credentials
 
-```bash
-pip install -r requirements.txt
-```
+To use this app, you will need Reddit API credentials. You can get these from the [Reddit Developer Portal](https://www.reddit.com/prefs/apps).
 
-## Usage
+- Click "Create App" or "Create Another App"
+- Fill in the details (name, description)
+- Select "script" as the application type
+- Use "http://localhost:8000" as the redirect URI (this doesn't need to be a real endpoint)
+- Click "Create app"
+- Take note of the client ID (the string under "personal use script") and client secret
 
-### Quick Start
+Enter these credentials in the app's sidebar or set them up as secrets in the Hugging Face Space settings (if you've duplicated this Space).
 
-Run the script to launch the UI:
+### 2. Searching Reddit
 
-```bash
-./run_scraper.sh
-```
+1. Enter one or more subreddits to search (one per line)
+2. Specify keywords to search for (one per line)
+3. Adjust parameters like post limit, sorting method, etc.
+4. Click "Run Search" to start scraping
 
-For the basic UI mode:
+### 3. Working with Results
 
-```bash
-./run_scraper.sh basic
-```
+- Use the tabs to navigate between different views
+- Apply additional filters to the search results
+- Visualize the data with built-in charts
+- Export results to CSV or JSON for further analysis
 
-### Manual Launch
+## Privacy & API Usage
 
-Alternatively, you can run either UI directly:
+This tool uses the official Reddit API and follows Reddit's API terms of service. Your API credentials are never stored on our servers unless you explicitly save them to your own copy of this Space.
 
-```bash
-# Basic UI
-streamlit run scraper_ui.py
+## Setup Your Own Copy
 
-# Advanced UI
-streamlit run advanced_scraper_ui.py
-```
+If you want to run this app with your own credentials always available:
 
-## Requirements
+1. Duplicate this Space to your account
+2. Go to Settings → Repository Secrets
+3. Add the following secrets:
+   - `REDDIT_CLIENT_ID`: Your Reddit API client ID
+   - `REDDIT_CLIENT_SECRET`: Your Reddit API client secret
+   - `REDDIT_USER_AGENT`: (Optional) A custom user agent string
 
-- Python 3.7+
-- Reddit API credentials (provided by default for testing)
-- Dependencies listed in requirements.txt
+## Tech Stack
 
-## Development
-
-This project includes:
-
-- `google_adk.py` - Core file with Reddit scraper functionality
-- `enhanced_scraper.py` - Extended scraper with advanced features
-- `scraper_ui.py` - Basic Streamlit UI
-- `advanced_scraper_ui.py` - Advanced UI with visualizations and filtering
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-## Note
-
-The included Reddit API credentials are for demonstration purposes only. For production use, please obtain your own credentials from the [Reddit Developer Portal](https://www.reddit.com/prefs/apps).
+- [Streamlit](https://streamlit.io/): UI framework
+- [PRAW](https://praw.readthedocs.io/): Reddit API wrapper
+- [Pandas](https://pandas.pydata.org/): Data processing
+- [Plotly](https://plotly.com/): Data visualization
