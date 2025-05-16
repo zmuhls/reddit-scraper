@@ -124,6 +124,17 @@ def create_data_visualization(results):
             
         # Output debug information to help diagnose issues
         st.write(f"Preparing to visualize data from {len(results)} subreddits with {total_posts} total posts")
+        
+        # Ensure plotly is properly imported and initialized
+        try:
+            import plotly.express as px
+            import plotly.graph_objects as go
+            st.write("✅ Plotly modules imported successfully")
+        except Exception as e:
+            st.error(f"⚠️ Error importing Plotly modules: {str(e)}")
+            import sys
+            st.write("Python path:", sys.path)
+            return
             
         # Combine all results
         all_posts = []
@@ -195,14 +206,32 @@ def create_data_visualization(results):
                 # Create histogram with automatic bin calculation
                 nbins = min(20, len(filtered_df['score'].unique()))  # Adjust bins based on unique values
                 
-                fig = px.histogram(filtered_df, x="score", color="subreddit", nbins=nbins,
-                                 title="Distribution of Post Scores")
-                fig.update_layout(
-                    xaxis_title="Score (Upvotes)",
-                    yaxis_title="Number of Posts",
-                    legend_title="Subreddit"
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                try:
+                    # Try using plotly (preferred)
+                    fig = px.histogram(filtered_df, x="score", color="subreddit", nbins=nbins,
+                                     title="Distribution of Post Scores")
+                    fig.update_layout(
+                        xaxis_title="Score (Upvotes)",
+                        yaxis_title="Number of Posts",
+                        legend_title="Subreddit"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error rendering plotly chart: {str(e)}")
+                    st.info("Falling back to matplotlib chart...")
+                    
+                    # Fallback to matplotlib
+                    try:
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        filtered_df.groupby('subreddit')['score'].plot.hist(
+                            alpha=0.6, bins=nbins, ax=ax)
+                        ax.set_xlabel("Score (Upvotes)")
+                        ax.set_ylabel("Number of Posts")
+                        ax.set_title("Distribution of Post Scores")
+                        ax.legend(title="Subreddit")
+                        st.pyplot(fig)
+                    except Exception as e2:
+                        st.error(f"Fallback chart also failed: {str(e2)}")
                 
                 # Show excluded outliers info if any were filtered
                 outliers_count = len(df) - len(filtered_df)
@@ -233,19 +262,35 @@ def create_data_visualization(results):
                 subreddit_stats = subreddit_counts.merge(subreddit_avg_scores, on='subreddit')
                 
                 # Create bar chart
-                fig = px.bar(subreddit_stats, x='subreddit', y='count',
-                           title="Number of Matching Posts by Subreddit",
-                           hover_data=['avg_score'],
-                           color='avg_score',
-                           color_continuous_scale='Viridis')
-                
-                fig.update_layout(
-                    xaxis_title="Subreddit",
-                    yaxis_title="Number of Posts",
-                    coloraxis_colorbar_title="Avg Score"
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
+                try:
+                    # Try using plotly (preferred)
+                    fig = px.bar(subreddit_stats, x='subreddit', y='count',
+                               title="Number of Matching Posts by Subreddit",
+                               hover_data=['avg_score'],
+                               color='avg_score',
+                               color_continuous_scale='Viridis')
+                    
+                    fig.update_layout(
+                        xaxis_title="Subreddit",
+                        yaxis_title="Number of Posts",
+                        coloraxis_colorbar_title="Avg Score"
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error rendering plotly chart: {str(e)}")
+                    st.info("Falling back to matplotlib chart...")
+                    
+                    # Fallback to matplotlib
+                    try:
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        subreddit_stats.plot.bar(x='subreddit', y='count', ax=ax, colormap='viridis')
+                        ax.set_xlabel("Subreddit")
+                        ax.set_ylabel("Number of Posts")
+                        ax.set_title("Number of Matching Posts by Subreddit")
+                        st.pyplot(fig)
+                    except Exception as e2:
+                        st.error(f"Fallback chart also failed: {str(e2)}")
             except Exception as e:
                 st.error(f"Error creating subreddit distribution chart: {str(e)}")
     
@@ -289,23 +334,42 @@ def create_data_visualization(results):
                             lambda x: f"{x}:00" + (" AM" if x < 12 else " PM")
                         )
                         
-                        fig = px.bar(hours_df, x='hour_of_day', y='count',
-                                    title="Posts by Hour of Day (UTC)",
-                                    color_discrete_sequence=['#1f77b4'])  # Use a standard blue color
-                        
-                        fig.update_layout(
-                            xaxis_title="Hour of Day (UTC)",
-                            yaxis_title="Number of Posts",
-                            xaxis=dict(
-                                tickmode='linear', 
-                                tick0=0, 
-                                dtick=2,  # Show every other hour for cleaner look
-                                range=[-0.5, 23.5],  # Ensure all hours are shown
-                                ticktext=[f"{h}" for h in range(0, 24, 2)],  # Custom labels
-                                tickvals=list(range(0, 24, 2))
+                        try:
+                            # Try using plotly (preferred)
+                            fig = px.bar(hours_df, x='hour_of_day', y='count',
+                                        title="Posts by Hour of Day (UTC)",
+                                        color_discrete_sequence=['#1f77b4'])  # Use a standard blue color
+                            
+                            fig.update_layout(
+                                xaxis_title="Hour of Day (UTC)",
+                                yaxis_title="Number of Posts",
+                                xaxis=dict(
+                                    tickmode='linear', 
+                                    tick0=0, 
+                                    dtick=2,  # Show every other hour for cleaner look
+                                    range=[-0.5, 23.5],  # Ensure all hours are shown
+                                    ticktext=[f"{h}" for h in range(0, 24, 2)],  # Custom labels
+                                    tickvals=list(range(0, 24, 2))
+                                )
                             )
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, use_container_width=True)
+                        except Exception as e:
+                            st.error(f"Error rendering plotly chart: {str(e)}")
+                            st.info("Falling back to matplotlib chart...")
+                            
+                            # Fallback to matplotlib
+                            try:
+                                fig, ax = plt.subplots(figsize=(10, 6))
+                                hours_df.plot.bar(x='hour_of_day', y='count', ax=ax, color='#1f77b4')
+                                ax.set_xlabel("Hour of Day (UTC)")
+                                ax.set_ylabel("Number of Posts")
+                                ax.set_title("Posts by Hour of Day (UTC)")
+                                # Set x-ticks to show every other hour
+                                ax.set_xticks(range(0, 24, 2))
+                                ax.set_xticklabels([f"{h}" for h in range(0, 24, 2)])
+                                st.pyplot(fig)
+                            except Exception as e2:
+                                st.error(f"Fallback chart also failed: {str(e2)}")
                     
                     with time_col2:
                         # Add a day of week visualization
@@ -319,19 +383,35 @@ def create_data_visualization(results):
                         # Add day shortnames for better display
                         day_counts['day_short'] = day_counts['day'].apply(lambda x: x[:3])
                         
-                        fig = px.bar(day_counts, x='day', y='count',
-                                    title="Posts by Day of Week",
-                                    color_discrete_sequence=['#2ca02c'])  # Use a standard green color
-                        
-                        fig.update_layout(
-                            xaxis_title="Day of Week",
-                            yaxis_title="Number of Posts",
-                            xaxis=dict(
-                                categoryorder='array',
-                                categoryarray=day_order
+                        try:
+                            # Try using plotly (preferred)
+                            fig = px.bar(day_counts, x='day', y='count',
+                                        title="Posts by Day of Week",
+                                        color_discrete_sequence=['#2ca02c'])  # Use a standard green color
+                            
+                            fig.update_layout(
+                                xaxis_title="Day of Week",
+                                yaxis_title="Number of Posts",
+                                xaxis=dict(
+                                    categoryorder='array',
+                                    categoryarray=day_order
+                                )
                             )
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, use_container_width=True)
+                        except Exception as e:
+                            st.error(f"Error rendering plotly chart: {str(e)}")
+                            st.info("Falling back to matplotlib chart...")
+                            
+                            # Fallback to matplotlib
+                            try:
+                                fig, ax = plt.subplots(figsize=(10, 6))
+                                day_counts.plot.bar(x='day', y='count', ax=ax, color='#2ca02c')
+                                ax.set_xlabel("Day of Week")
+                                ax.set_ylabel("Number of Posts")
+                                ax.set_title("Posts by Day of Week")
+                                st.pyplot(fig)
+                            except Exception as e2:
+                                st.error(f"Fallback chart also failed: {str(e2)}")
                     
                     # Add a date range histogram to show post distribution over time
                     st.subheader("Post Distribution Over Time")
@@ -344,15 +424,33 @@ def create_data_visualization(results):
                     date_counts['post_date'] = pd.to_datetime(date_counts['post_date'])
                     
                     # Plot the time series
-                    fig = px.line(date_counts, x='post_date', y='count',
-                                title="Post Volume Over Time",
-                                markers=True)
-                    
-                    fig.update_layout(
-                        xaxis_title="Date",
-                        yaxis_title="Number of Posts"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                    try:
+                        # Try using plotly (preferred)
+                        fig = px.line(date_counts, x='post_date', y='count',
+                                    title="Post Volume Over Time",
+                                    markers=True)
+                        
+                        fig.update_layout(
+                            xaxis_title="Date",
+                            yaxis_title="Number of Posts"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error rendering plotly chart: {str(e)}")
+                        st.info("Falling back to matplotlib chart...")
+                        
+                        # Fallback to matplotlib
+                        try:
+                            fig, ax = plt.subplots(figsize=(10, 6))
+                            date_counts.plot(x='post_date', y='count', kind='line', 
+                                            marker='o', ax=ax)
+                            ax.set_xlabel("Date")
+                            ax.set_ylabel("Number of Posts")
+                            ax.set_title("Post Volume Over Time")
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                        except Exception as e2:
+                            st.error(f"Fallback chart also failed: {str(e2)}")
                 else:
                     st.warning("No date information available for Time Analysis.")
             except Exception as e:

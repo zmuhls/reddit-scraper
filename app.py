@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import pandas as pd
-import plotly.express as px
+import sys
 from dotenv import load_dotenv
 
 # IMPORTANT: set_page_config must be the first Streamlit command called
@@ -12,9 +12,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize plotly to ensure it's properly loaded
-if 'px' not in globals():
+# Robust initialization of plotly to ensure it's properly loaded
+try:
     import plotly.express as px
+    import plotly.graph_objects as go
+    # Force plotly to initialize its renderers
+    import plotly.io as pio
+    pio.renderers.default = "browser"
+except Exception as e:
+    st.error(f"Error initializing Plotly: {str(e)}")
+    st.write("Debug info:", sys.path)
 
 # Disable static file serving to prevent the static folder warning
 # This configuration is set using environment variables instead of directly accessing server settings

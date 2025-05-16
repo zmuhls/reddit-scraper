@@ -6,3 +6,5 @@ matplotlib>=3.5.0
 python-dotenv>=0.20.0
 pyarrow>=6.0.0  # Arrow for DataFrame serialization
 kaleido>=0.2.1  # Required for plotly static image export
+ipywidgets>=7.6.0  # Required for plotly in some environments
+nbformat>=5.0.0  # Required for plotly in some environments
