@@ -5,3 +5,4 @@ plotly>=5.5.0
 matplotlib>=3.5.0
 python-dotenv>=0.20.0
 pyarrow>=6.0.0  # Arrow for DataFrame serialization
+kaleido>=0.2.1  # Required for plotly static image export
