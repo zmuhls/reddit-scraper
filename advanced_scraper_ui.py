@@ -122,6 +122,9 @@ def create_data_visualization(results):
             st.warning("No posts found matching your search criteria. Try adjusting your filters.")
             return
             
+        # Output debug information to help diagnose issues
+        st.write(f"Preparing to visualize data from {len(results)} subreddits with {total_posts} total posts")
+            
         # Combine all results
         all_posts = []
         skipped_posts = 0
@@ -133,6 +136,7 @@ def create_data_visualization(results):
                     all_posts.append(post_copy)
                 except Exception as e:
                     skipped_posts += 1
+                    st.warning(f"Error processing post: {str(e)}")
                     continue  # Skip this post but continue processing others
         
         if skipped_posts > 0:
@@ -145,12 +149,27 @@ def create_data_visualization(results):
         # Create DataFrame
         df = pd.DataFrame(all_posts)
         
+        # Display raw data sample for debugging
+        with st.expander("Debug: View raw data sample"):
+            st.write(df.head())
+            st.write("DataFrame shape:", df.shape)
+            st.write("Columns:", df.columns.tolist())
+        
         # Basic data validation
         required_columns = ['score', 'subreddit']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             st.error(f"Required column(s) missing: {', '.join(missing_columns)}")
             st.write("Available columns:", df.columns.tolist())
+            return
+            
+        # Ensure score column is numeric
+        try:
+            df['score'] = pd.to_numeric(df['score'], errors='coerce')
+            df = df.dropna(subset=['score'])
+            st.write(f"Processed {len(df)} posts with valid scores")
+        except Exception as e:
+            st.error(f"Error converting scores to numeric values: {str(e)}")
             return
         
         # Create tabs for different visualizations
