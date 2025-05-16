@@ -113,6 +113,12 @@ def filter_results(results, filters):
 def create_data_visualization(results):
     """Create data visualizations based on results"""
     try:
+        # Check if we have any data
+        total_posts = sum(len(posts) for posts in results.values())
+        if total_posts == 0:
+            st.warning("No posts found matching your search criteria. Try adjusting your filters.")
+            return
+            
         # Combine all results
         all_posts = []
         for subreddit, posts in results.items():
@@ -143,6 +149,7 @@ def create_data_visualization(results):
             if 'subreddit' not in df.columns:
                 missing_columns.append('subreddit')
             st.error(f"Required column(s) missing: {', '.join(missing_columns)}")
+            st.write("Available columns:", df.columns.tolist())
             return
             
         # Create tabs for different visualizations
@@ -154,9 +161,23 @@ def create_data_visualization(results):
                 st.subheader("Score Distribution")
                 fig = px.histogram(df, x="score", color="subreddit", nbins=20,
                                   title="Distribution of Post Scores")
-                st.plotly_chart(fig, use_container_width=True)
+                fig.update_layout(
+                    xaxis_title="Score (Upvotes)",
+                    yaxis_title="Number of Posts",
+                    legend_title="Subreddit"
+                )
+                # Add error handling with detailed output
+                try:
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error rendering plotly chart: {str(e)}")
+                    # More detailed error info
+                    import traceback
+                    st.code(traceback.format_exc())
+                    st.write("Figure data type:", type(fig))
             except Exception as e:
                 st.error(f"Error creating Score Distribution: {str(e)}")
+                st.write("DataFrame head:", df.head())
         
         # Posts by Subreddit
         with viz_tab2:
@@ -164,11 +185,26 @@ def create_data_visualization(results):
                 st.subheader("Posts by Subreddit")
                 subreddit_counts = df['subreddit'].value_counts().reset_index()
                 subreddit_counts.columns = ['subreddit', 'count']
+                
                 fig = px.bar(subreddit_counts, x='subreddit', y='count',
                              title="Number of Matching Posts by Subreddit")
-                st.plotly_chart(fig, use_container_width=True)
+                fig.update_layout(
+                    xaxis_title="Subreddit",
+                    yaxis_title="Number of Posts"
+                )
+                
+                # Add error handling with detailed output
+                try:
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error rendering plotly chart: {str(e)}")
+                    # More detailed error info
+                    import traceback
+                    st.code(traceback.format_exc())
+                    st.write("Figure data type:", type(fig))
             except Exception as e:
                 st.error(f"Error creating Posts by Subreddit chart: {str(e)}")
+                st.write("DataFrame unique subreddits:", df['subreddit'].unique())
         
         # Time Analysis
         with viz_tab3:
@@ -188,8 +224,21 @@ def create_data_visualization(results):
                         
                         fig = px.histogram(df, x="hour_of_day", nbins=24,
                                           title="Posts by Hour of Day")
-                        fig.update_layout(xaxis_title="Hour of Day (UTC)")
-                        st.plotly_chart(fig, use_container_width=True)
+                        fig.update_layout(
+                            xaxis_title="Hour of Day (UTC)",
+                            yaxis_title="Number of Posts",
+                            xaxis=dict(tickmode='linear', tick0=0, dtick=1)  # Ensure all hours are shown
+                        )
+                        
+                        # Add error handling with detailed output
+                        try:
+                            st.plotly_chart(fig, use_container_width=True)
+                        except Exception as e:
+                            st.error(f"Error rendering plotly chart: {str(e)}")
+                            # More detailed error info
+                            import traceback
+                            st.code(traceback.format_exc())
+                            st.write("Figure data type:", type(fig))
                     except Exception as e:
                         st.error(f"Error processing dates: {str(e)}")
                 else:
@@ -332,8 +381,18 @@ def main():
                         
                         # Show detailed post view
                         st.subheader("Post Details")
-                        post_index = st.slider(f"Select post from r/{subreddit}", 
-                                                0, max(0, len(posts)-1), 0)
+                        
+                        # Handle the case where there are no posts or only one post
+                        if len(posts) == 0:
+                            st.info(f"No posts found to display details.")
+                        elif len(posts) == 1:
+                            # For a single post, no need for a slider
+                            post_index = 0
+                            st.info(f"Displaying the only post found.")
+                        else:
+                            # For multiple posts, create a slider
+                            post_index = st.slider(f"Select post from r/{subreddit} ({len(posts)} posts)", 
+                                                  0, len(posts)-1, 0)
                         
                         if len(posts) > 0:
                             post = posts[post_index]
@@ -393,9 +452,18 @@ def main():
     # Tab 2: Visualizations
     with tab2:
         if st.session_state.results:
-            # Apply current filters to visualization data
-            filtered_results = filter_results(st.session_state.results, st.session_state.filters)
-            create_data_visualization(filtered_results)
+            # Display loading state while generating visualizations
+            with st.spinner("Generating visualizations..."):
+                # Apply current filters to visualization data
+                filtered_results = filter_results(st.session_state.results, st.session_state.filters)
+                
+                # Check if we have any results after filtering
+                total_posts = sum(len(posts) for posts in filtered_results.values())
+                if total_posts == 0:
+                    st.warning("No posts match your current filters. Try adjusting your filter criteria.")
+                else:
+                    # Continue with visualization
+                    create_data_visualization(filtered_results)
         else:
             st.info("Run a search to generate visualizations.")
     
