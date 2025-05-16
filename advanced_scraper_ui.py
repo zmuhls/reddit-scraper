@@ -556,9 +556,26 @@ def main():
             
     # Tab 5: API Credentials - Auto-closed by default
     with tab5:
-        # Display welcome message if credentials are not set
-        if not os.environ.get("REDDIT_CLIENT_ID") and not os.environ.get("REDDIT_CLIENT_SECRET"):
-            st.info("👋 Welcome to Reddit Scraper!")
+        # Initialize session state for credentials if they don't exist
+        if 'client_id' not in st.session_state:
+            st.session_state.client_id = ""
+        if 'client_secret' not in st.session_state:
+            st.session_state.client_secret = ""
+        if 'user_agent' not in st.session_state:
+            st.session_state.user_agent = "RedditScraperApp/1.0"
+        
+        # In development environment, try to load from .env file for convenience
+        # But don't do this in production to avoid credential leakage
+        is_local_dev = not os.environ.get('SPACE_ID') and not os.environ.get('SYSTEM')
+        if is_local_dev:
+            load_dotenv()
+            # Only load from env if session state is empty (first load)
+            if not st.session_state.client_id:
+                st.session_state.client_id = os.environ.get("REDDIT_CLIENT_ID", "")
+            if not st.session_state.client_secret:
+                st.session_state.client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+            if st.session_state.user_agent == "RedditScraperApp/1.0":
+                st.session_state.user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
         
         # Two columns for instructions and input
         cred_col1, cred_col2 = st.columns([1, 1])
@@ -580,27 +597,6 @@ def main():
             """)
             
         with cred_col2:
-            # Initialize session state for credentials if they don't exist
-            if 'client_id' not in st.session_state:
-                st.session_state.client_id = ""
-            if 'client_secret' not in st.session_state:
-                st.session_state.client_secret = ""
-            if 'user_agent' not in st.session_state:
-                st.session_state.user_agent = "RedditScraperApp/1.0"
-            
-            # In development environment, try to load from .env file for convenience
-            # But don't do this in production to avoid credential leakage
-            is_local_dev = not os.environ.get('SPACE_ID') and not os.environ.get('SYSTEM')
-            if is_local_dev:
-                load_dotenv()
-                # Only load from env if session state is empty (first load)
-                if not st.session_state.client_id:
-                    st.session_state.client_id = os.environ.get("REDDIT_CLIENT_ID", "")
-                if not st.session_state.client_secret:
-                    st.session_state.client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
-                if st.session_state.user_agent == "RedditScraperApp/1.0":
-                    st.session_state.user_agent = os.environ.get("REDDIT_USER_AGENT", "RedditScraperApp/1.0")
-            
             # Use session state for the input values
             client_id = st.text_input("Client ID", value=st.session_state.client_id, key="client_id_input")
             client_secret = st.text_input("Client Secret", value=st.session_state.client_secret, type="password", key="client_secret_input")
