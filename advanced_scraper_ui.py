@@ -115,139 +115,129 @@ def filter_results(results, filters):
 
 def create_data_visualization(results):
     """Create data visualizations based on results"""
-    try:
-        # Check if we have any data
-        total_posts = sum(len(posts) for posts in results.values())
-        if total_posts == 0:
-            st.warning("No posts found matching your search criteria. Try adjusting your filters.")
-            return
+    # Check if we have any data
+    total_posts = sum(len(posts) for posts in results.values())
+    if total_posts == 0:
+        st.warning("No posts found matching your search criteria. Try adjusting your filters.")
+        return
+        
+    # Combine all results
+    all_posts = []
+    for subreddit, posts in results.items():
+        for post in posts:
+            try:
+                post_copy = post.copy()
+                post_copy['subreddit'] = subreddit
+                all_posts.append(post_copy)
+            except Exception as e:
+                st.warning(f"Skipping post due to error: {str(e)}")
+    
+    if not all_posts:
+        st.warning("No data to visualize.")
+        return
+    
+    # Create DataFrame
+    df = pd.DataFrame(all_posts)
+    
+    # Basic data validation
+    required_columns = ['score', 'subreddit']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        st.error(f"Required column(s) missing: {', '.join(missing_columns)}")
+        st.write("Available columns:", df.columns.tolist())
+        return
+        
+    # Create tabs for different visualizations
+    viz_tab1, viz_tab2, viz_tab3 = st.tabs(["Score Distribution", "Posts by Subreddit", "Time Analysis"])
+    
+    # Score Distribution
+    with viz_tab1:
+        # Add a defensible max score limit to prevent outliers from skewing the visualization
+        max_score_display = min(df['score'].quantile(0.95) * 1.5, df['score'].max())
+        filtered_df = df[df['score'] <= max_score_display]
+        
+        fig = px.histogram(filtered_df, x="score", color="subreddit", nbins=20,
+                         title="Distribution of Post Scores")
+        fig.update_layout(
+            xaxis_title="Score (Upvotes)",
+            yaxis_title="Number of Posts",
+            legend_title="Subreddit"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Show excluded outliers info if any were filtered
+        if len(df) > len(filtered_df):
+            st.info(f"{len(df) - len(filtered_df)} high-scoring outlier posts were excluded from the visualization for better scale. Max displayed score: {int(max_score_display)}.")
+    
+    # Posts by Subreddit
+    with viz_tab2:
+        # Get counts and sort by count for better visualization
+        subreddit_counts = df['subreddit'].value_counts().reset_index()
+        subreddit_counts.columns = ['subreddit', 'count']
+        subreddit_counts = subreddit_counts.sort_values('count', ascending=False)
+        
+        fig = px.bar(subreddit_counts, x='subreddit', y='count',
+                    title="Number of Matching Posts by Subreddit")
+        fig.update_layout(
+            xaxis_title="Subreddit",
+            yaxis_title="Number of Posts"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Time Analysis
+    with viz_tab3:
+        if 'created_utc' in df.columns:
+            # Create a copy of the dataframe for time analysis to prevent modifying the original
+            time_df = df.copy()
             
-        # Combine all results
-        all_posts = []
-        for subreddit, posts in results.items():
-            for post in posts:
-                try:
-                    post_copy = post.copy()
-                    post_copy['subreddit'] = subreddit
-                    all_posts.append(post_copy)
-                except Exception as e:
-                    st.warning(f"Skipping post due to error: {str(e)}")
-        
-        if not all_posts:
-            st.warning("No data to visualize.")
-            return
-        
-        # Create DataFrame with error handling
-        try:
-            df = pd.DataFrame(all_posts)
-        except Exception as e:
-            st.error(f"Could not create DataFrame: {str(e)}")
-            return
-        
-        # Basic data validation
-        if 'score' not in df.columns or 'subreddit' not in df.columns:
-            missing_columns = []
-            if 'score' not in df.columns:
-                missing_columns.append('score')
-            if 'subreddit' not in df.columns:
-                missing_columns.append('subreddit')
-            st.error(f"Required column(s) missing: {', '.join(missing_columns)}")
-            st.write("Available columns:", df.columns.tolist())
-            return
+            # Handle different date formats with better error handling
+            time_df['created_date'] = pd.to_datetime(time_df['created_utc'], errors='coerce')
             
-        # Create tabs for different visualizations
-        viz_tab1, viz_tab2, viz_tab3 = st.tabs(["Score Distribution", "Posts by Subreddit", "Time Analysis"])
-        
-        # Score Distribution
-        with viz_tab1:
-            try:
-                fig = px.histogram(df, x="score", color="subreddit", nbins=20,
-                                  title="Distribution of Post Scores")
-                fig.update_layout(
-                    xaxis_title="Score (Upvotes)",
-                    yaxis_title="Number of Posts",
-                    legend_title="Subreddit"
-                )
-                # Add error handling with detailed output
-                try:
-                    st.plotly_chart(fig, use_container_width=True)
-                except Exception as e:
-                    st.error(f"Error rendering plotly chart: {str(e)}")
-                    # More detailed error info
-                    import traceback
-                    st.code(traceback.format_exc())
-                    st.write("Figure data type:", type(fig))
-            except Exception as e:
-                st.error(f"Error creating Score Distribution: {str(e)}")
-                st.write("DataFrame head:", df.head())
-        
-        # Posts by Subreddit
-        with viz_tab2:
-            try:
-                subreddit_counts = df['subreddit'].value_counts().reset_index()
-                subreddit_counts.columns = ['subreddit', 'count']
-                
-                fig = px.bar(subreddit_counts, x='subreddit', y='count',
-                             title="Number of Matching Posts by Subreddit")
-                fig.update_layout(
-                    xaxis_title="Subreddit",
-                    yaxis_title="Number of Posts"
-                )
-                
-                # Add error handling with detailed output
-                try:
-                    st.plotly_chart(fig, use_container_width=True)
-                except Exception as e:
-                    st.error(f"Error rendering plotly chart: {str(e)}")
-                    # More detailed error info
-                    import traceback
-                    st.code(traceback.format_exc())
-                    st.write("Figure data type:", type(fig))
-            except Exception as e:
-                st.error(f"Error creating Posts by Subreddit chart: {str(e)}")
-                st.write("DataFrame unique subreddits:", df['subreddit'].unique())
-        
-        # Time Analysis
-        with viz_tab3:
-            try:
-                if 'created_utc' in df.columns:
-                    try:
-                        # Handle different date formats
-                        df['created_date'] = pd.to_datetime(df['created_utc'], errors='coerce')
-                        
-                        # Check if conversion was successful
-                        if df['created_date'].isna().all():
-                            st.warning("Could not parse date formats properly.")
-                            return
-                            
-                        df['hour_of_day'] = df['created_date'].dt.hour
-                        
-                        fig = px.histogram(df, x="hour_of_day", nbins=24,
-                                          title="Posts by Hour of Day")
-                        fig.update_layout(
-                            xaxis_title="Hour of Day (UTC)",
-                            yaxis_title="Number of Posts",
-                            xaxis=dict(tickmode='linear', tick0=0, dtick=1)  # Ensure all hours are shown
-                        )
-                        
-                        # Add error handling with detailed output
-                        try:
-                            st.plotly_chart(fig, use_container_width=True)
-                        except Exception as e:
-                            st.error(f"Error rendering plotly chart: {str(e)}")
-                            # More detailed error info
-                            import traceback
-                            st.code(traceback.format_exc())
-                            st.write("Figure data type:", type(fig))
-                    except Exception as e:
-                        st.error(f"Error processing dates: {str(e)}")
-                else:
-                    st.warning("No date information available for Time Analysis.")
-            except Exception as e:
-                st.error(f"Error creating Time Analysis: {str(e)}")
-                
-    except Exception as e:
-        st.error(f"Data visualization failed: {str(e)}")
+            # Filter out rows where date parsing failed
+            valid_dates = time_df['created_date'].notna()
+            if valid_dates.sum() == 0:
+                st.warning("Could not parse any date formats. Please check the date formatting in your data.")
+                return
+            elif valid_dates.sum() < len(time_df):
+                st.warning(f"Note: {len(time_df) - valid_dates.sum()} posts had invalid date formats and were excluded from time analysis.")
+            
+            time_df = time_df[valid_dates]
+            
+            # Extract hour of day
+            time_df['hour_of_day'] = time_df['created_date'].dt.hour
+            
+            # Create the histogram with all hours (0-23) represented
+            hours_df = pd.DataFrame({'hour_of_day': range(24)})
+            hour_counts = time_df['hour_of_day'].value_counts().reset_index()
+            hour_counts.columns = ['hour', 'count']
+            hours_df = hours_df.merge(hour_counts, left_on='hour_of_day', right_on='hour', how='left').fillna(0)
+            
+            fig = px.bar(hours_df, x='hour_of_day', y='count',
+                        title="Posts by Hour of Day (UTC)")
+            fig.update_layout(
+                xaxis_title="Hour of Day (UTC)",
+                yaxis_title="Number of Posts",
+                xaxis=dict(tickmode='linear', tick0=0, dtick=1, range=[-0.5, 23.5])  # Ensure all hours are shown
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Add a day of week visualization as well
+            time_df['day_of_week'] = time_df['created_date'].dt.day_name()
+            
+            # Make sure days are in correct order
+            day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            day_counts = time_df['day_of_week'].value_counts().reindex(day_order).reset_index()
+            day_counts.columns = ['day', 'count']
+            
+            fig = px.bar(day_counts, x='day', y='count',
+                        title="Posts by Day of Week")
+            fig.update_layout(
+                xaxis_title="Day of Week",
+                yaxis_title="Number of Posts"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No date information available for Time Analysis.")
 
 def main():
     # Suppress the "No secrets files found" warning
