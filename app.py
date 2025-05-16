@@ -10,6 +10,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Disable static file serving to prevent the static folder warning
+# This configuration is set using environment variables instead of directly accessing server settings
+os.environ['STREAMLIT_SERVER_ENABLE_STATIC_SERVING'] = 'false'
+
 # Session state initialization is now handled in advanced_scraper_ui.py
 
 # Load environment variables

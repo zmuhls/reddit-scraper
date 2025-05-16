@@ -13,6 +13,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 from enhanced_scraper import EnhancedRedditScraper
 
+# Disable static file serving to prevent the warning
+os.environ['STREAMLIT_SERVER_ENABLE_STATIC_SERVING'] = 'false'
+
 # Note: Page configuration and session state initialization are handled in app.py
 
 # Functions
@@ -158,7 +161,6 @@ def create_data_visualization(results):
         # Score Distribution
         with viz_tab1:
             try:
-                st.subheader("Score Distribution")
                 fig = px.histogram(df, x="score", color="subreddit", nbins=20,
                                   title="Distribution of Post Scores")
                 fig.update_layout(
@@ -182,7 +184,6 @@ def create_data_visualization(results):
         # Posts by Subreddit
         with viz_tab2:
             try:
-                st.subheader("Posts by Subreddit")
                 subreddit_counts = df['subreddit'].value_counts().reset_index()
                 subreddit_counts.columns = ['subreddit', 'count']
                 
@@ -209,7 +210,6 @@ def create_data_visualization(results):
         # Time Analysis
         with viz_tab3:
             try:
-                st.subheader("Time Analysis")
                 if 'created_utc' in df.columns:
                     try:
                         # Handle different date formats
@@ -268,9 +268,9 @@ def main():
             'show_only_with_comments': False
         }
     
-    # Header
-    st.markdown('<div class="main-header">Reddit Scraper</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subheader">Data Collection Tool</div>', unsafe_allow_html=True)
+    # Header using Streamlit's native heading components
+    st.title("Reddit Scraper")
+    st.header("Data Collection Tool")
     
     # Sidebar for configuration
     with st.sidebar:
